@@ -1,0 +1,74 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # 完整历史，用于归纳版本间提交
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # 版本号唯一来源是 git tag：构建前把 tag 版本注入 Cargo.toml
+      - name: Inject version from tag
+        shell: pwsh
+        run: |
+          $ver = "${{ github.ref_name }}".TrimStart('v')
+          Write-Output "注入版本号: $ver"
+          $cargo = Get-Content Cargo.toml -Raw
+          $cargo = $cargo -replace '(?m)^version = "[^"]*"', "version = `"$ver`""
+          Set-Content Cargo.toml $cargo -NoNewline -Encoding utf8
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Package zip
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $zip = "game-asset-cli-windows-x86_64-$tag.zip"
+          Compress-Archive -Path target/release/game-asset-cli.exe -DestinationPath $zip -Force
+          "zip=$zip" | Out-File $env:GITHUB_OUTPUT -Append -Encoding utf8
+        id: pkg
+
+      - name: Generate release notes
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $repo = "${{ github.repository }}"
+          $prev = git tag --sort=-v:refname | Where-Object { $_ -ne $tag } | Select-Object -First 1
+          $range = if ($prev) { "$prev..$tag" } else { $tag }
+          $commits = git log $range --pretty=format:"- %s (``%h``)" --no-merges
+          $lines = @()
+          $lines += "## 版本说明"
+          $lines += ""
+          if ($prev) { $lines += "本版本相对 ``$prev`` 的全部变更如下：" } else { $lines += "首个版本，包含全部提交：" }
+          $lines += ""
+          $lines += "### What's Changed"
+          $lines += ""
+          if ($commits) { $lines += $commits } else { $lines += "- 无代码变更" }
+          $lines += ""
+          if ($prev) { $lines += "**Full Changelog**: https://github.com/$repo/compare/$prev...$tag" }
+          $lines += ""
+          $lines += "> 注意：zip 内仅含 game-asset-cli.exe。音频输出 ogg/flac/mp3 需自备 ffmpeg.exe（放 exe 同目录或 bin/ 子目录）；图像功能与 WAV 输出开箱即用。"
+          $lines | Out-File release-notes.md -Encoding utf8
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" `
+            --repo "${{ github.repository }}" `
+            --title "game-asset-cli ${{ github.ref_name }}" `
+            --notes-file release-notes.md `
+            "${{ steps.pkg.outputs.zip }}"

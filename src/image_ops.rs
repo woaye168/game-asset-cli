@@ -342,6 +342,7 @@ fn anchor_offset(anchor: &str, cw: u32, ch: u32, iw: u32, ih: u32) -> Result<(i6
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn pad(
     inputs: &[PathBuf],
     width: Option<u32>,
@@ -385,6 +386,7 @@ fn pad(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn slice(
     input: &Path,
     tile_width: Option<u32>,
@@ -500,6 +502,7 @@ fn remove_color(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn pack(
     inputs: &[PathBuf],
     output: &Path,
@@ -524,7 +527,7 @@ fn pack(
     }
     let cell_size = cell.unwrap_or(max_side).max(1);
     let cols = cols.unwrap_or_else(|| (n as f64).sqrt().ceil() as u32).max(1);
-    let rows = ((n as u32) + cols - 1) / cols;
+    let rows = (n as u32).div_ceil(cols);
     let width = margin * 2 + cols * cell_size + (cols - 1) * spacing;
     let height = margin * 2 + rows * cell_size + (rows - 1) * spacing;
     let bg = match &background {

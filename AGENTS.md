@@ -15,6 +15,8 @@ src/
   image_ops.rs  # 图像子命令实现（convert/resize/crop/trim/pad/slice/pack/chroma/quantize/info）
   util.rs       # 公共工具：ffmpeg 探测与调用（run_ffmpeg/tool_available）、输出路径解析、表格打印
 bin/            # 外置 ffmpeg.exe/ffprobe.exe（git 忽略，不入库）
+skills/         # 配套 AI agent 技能说明（audio-processing / image-processing）
+.github/workflows/  # CI（check/clippy/test）+ Release（打 v* 标签自动构建 zip 发版）
 target/         # 构建产物（git 忽略）
 ```
 

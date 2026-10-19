@@ -8,7 +8,11 @@
 cargo build --release
 ```
 
-产物为单个 `game-asset-cli.exe`，拷贝即用。
+产物为单个 `game-asset-cli.exe`，拷贝即用。也可从 [Releases](../../releases) 下载 Windows 打包 zip（打 `v*` 标签自动构建发布）。
+
+## AI Agent Skills
+
+`skills/` 目录收录配套的 Trae/Agent 技能说明（`audio-processing` / `image-processing`），拷到 agent 的 skills 目录即可让 AI 按最佳实践调用本工具。
 
 ## ffmpeg 配置（可选，仅音频压缩格式需要）
 
